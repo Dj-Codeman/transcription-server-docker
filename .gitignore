@@ -1,0 +1,22 @@
+resume-code.sh
+
+# Python environments and caches
+.venv/
+venv/
+whisper-env/
+__pycache__/
+*.py[cod]
+
+# Build/package artifacts
+build/
+dist/
+*.egg-info/
+
+# Local runtime/temp files
+*.log
+*.tmp
+*.wav
+*.mp3
+*.m4a
+*.flac
+.DS_Store

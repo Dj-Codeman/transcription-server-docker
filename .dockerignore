@@ -1,0 +1,8 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.wav
+whisper-env
+.git
