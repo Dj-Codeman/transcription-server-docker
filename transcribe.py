@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import logging
 import subprocess
 import os
 import importlib
@@ -20,6 +21,8 @@ Backend notes:
   faster-whisper  Best for CPU and NVIDIA CUDA.
   openai-whisper  Best for AMD ROCm via PyTorch ROCm.
 """
+
+LOGGER = logging.getLogger(__name__)
 
 def run_ffmpeg(in_path: Path, out_path: Path):
     cmd = [
@@ -45,7 +48,15 @@ def transcribe_faster_whisper(
     lines = []
     for s in segments:
         lines.append(s.text.strip())
-    return "\n".join(lines), info
+    info_dict = {
+        "backend": "faster-whisper",
+        "device": device,
+        "language": getattr(info, "language", None),
+        "language_probability": getattr(info, "language_probability", None),
+        "duration": getattr(info, "duration", None),
+        "duration_after_vad": getattr(info, "duration_after_vad", None),
+    }
+    return "\n".join(lines), info_dict
 
 
 def transcribe_openai_whisper(
@@ -62,6 +73,7 @@ def transcribe_openai_whisper(
     text = result.get("text", "").strip()
     info = {
         "backend": "openai-whisper",
+        "device": device,
         "language": result.get("language"),
     }
     return text, info
@@ -76,6 +88,20 @@ def dependency_error() -> RuntimeError:
         "No transcription backend is installed. Install at least one:\n"
         "- NVIDIA/CPU path: pip install faster-whisper\n"
         "- AMD ROCm path: install ROCm PyTorch, then pip install openai-whisper"
+    )
+
+
+def is_cuda_library_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return any(
+        marker in message
+        for marker in (
+            "libcublas",
+            "libcudnn",
+            "libcuda",
+            "cannot be loaded",
+            "cuda driver",
+        )
     )
 
 
@@ -134,7 +160,20 @@ def transcribe(wav_path: Path, model_size: str, backend: str, device: str, compu
     if selected_backend == "openai-whisper":
         return transcribe_openai_whisper(wav_path, model_size, selected_device, compute_type)
 
-    return transcribe_faster_whisper(wav_path, model_size, selected_device, compute_type)
+    try:
+        return transcribe_faster_whisper(wav_path, model_size, selected_device, compute_type)
+    except RuntimeError as exc:
+        should_fallback = (
+            selected_backend == "faster-whisper"
+            and selected_device == "cuda"
+            and device == "auto"
+            and is_cuda_library_error(exc)
+        )
+        if not should_fallback:
+            raise
+
+        LOGGER.warning("CUDA runtime unavailable, falling back to CPU for faster-whisper: %s", exc)
+        return transcribe_faster_whisper(wav_path, model_size, "cpu", "auto")
 
 def main():
     ap = argparse.ArgumentParser(
@@ -145,7 +184,7 @@ def main():
     ap.add_argument("input", type=Path, help="Input WAV file")
     ap.add_argument(
         "--model",
-        default="base",
+        default="large-v3",
         help="Model size/name (e.g., tiny|base|small|medium|large-v3)",
     )
     ap.add_argument(
@@ -171,11 +210,15 @@ def main():
     if not in_path.exists():
         raise FileNotFoundError(in_path)
 
-    out_dir = "/tmp/transcriptions/"
-    os.makedirs(out_dir, exist_ok=True)
+    storage_root = Path(os.getenv("APP_STORAGE_ROOT", "/workspace"))
+    work_dir = storage_root / "work"
+    transcripts_dir = storage_root / "transcripts"
+    work_dir.mkdir(parents=True, exist_ok=True)
+    transcripts_dir.mkdir(parents=True, exist_ok=True)
+
     out_file_prefix = in_path.absolute().as_posix().encode("utf-8").hex()[0:10]
-    optimized = Path(out_dir) / f"{out_file_prefix}.16k_mono.wav"
-    out_txt = Path(f"{optimized}.txt")
+    optimized = work_dir / f"{out_file_prefix}.16k_mono.wav"
+    out_txt = transcripts_dir / f"{out_file_prefix}.txt"
 
     print(f"Optimizing audio -> {optimized}")
     run_ffmpeg(in_path, optimized)

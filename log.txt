@@ -1,0 +1,35 @@
+2026/03/17 04:44:56 control: control server key from https://controlplane.tailscale.com: ts2021=[fSeS+], legacy=[nlFWp]
+
+2026/03/17 04:44:56 control: RegisterReq: onode= node=[jIZr0] fup=false nks=false
+
+2026/03/17 04:44:56 control: controlhttp: forcing port 443 dial due to recent noise dial
+
+2026/03/17 04:44:56 control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false
+
+2026/03/17 04:44:56 control: netmap: got new dial plan from control
+
+INFO:     Started server process [85]
+
+INFO:     Waiting for application startup.
+
+INFO:     Application startup complete.
+
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+
+[start] publishing whisper api to tailnet with tailscale serve
+
+service hosts must be tagged nodes
+
+[start] deriving storage env for s3 mode
+
+[start] validating storage contract
+
+storage mode: s3 (env ok)
+
+[start] starting tailscaled
+
+TPM: error opening: stat /dev/tpmrm0: no such file or directory
+
+2026/03/17 04:45:09 logtail started
+
+2026/03/17 04:45:09 Program starting: v1.94.2-t0a29cf18b-g3f044c9f6, Go 1.25.5: []string{"tailscaled", "--tun=userspace-networking", "--state=/var/lib/tailscale/tailscaled.state", "--socket=/tmp/tailscaled.sock"}
