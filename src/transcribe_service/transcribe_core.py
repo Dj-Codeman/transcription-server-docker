@@ -12,9 +12,9 @@ APP_DESCRIPTION = (
 )
 
 APP_EPILOG = """Examples:
-  python transcribe.py input.wav
-  python transcribe.py input.wav --backend faster-whisper --device cuda --compute-type float16
-  python transcribe.py input.wav --backend openai-whisper --device cuda
+  PYTHONPATH=src python -m transcribe_service.transcribe_core input.wav
+  PYTHONPATH=src python -m transcribe_service.transcribe_core input.wav --backend faster-whisper --device cuda --compute-type float16
+  PYTHONPATH=src python -m transcribe_service.transcribe_core input.wav --backend openai-whisper --device cuda
 
 Backend notes:
   auto            Prefer faster-whisper when available; use openai-whisper for ROCm when detected.

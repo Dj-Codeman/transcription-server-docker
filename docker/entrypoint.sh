@@ -3,11 +3,11 @@ set -eu
 
 if [ "${APP_STORAGE_MODE:-none}" = "s3" ]; then
   echo "[start] deriving storage env for s3 mode"
-  eval "$(/usr/local/bin/derive-storage-env.sh --export)"
+  eval "$(/app/scripts/derive-storage-env.sh --export)"
 fi
 
 echo "[start] validating storage contract"
-/usr/local/bin/validate-storage.sh
+/app/scripts/validate-storage.sh
 
 CUDA_LIB_DIRS="$(python3 - <<'PY'
 import os
@@ -61,7 +61,7 @@ tailscale --socket=/tmp/tailscaled.sock up \
   --accept-dns=false
 
 echo "[start] starting whisper api"
-uvicorn api:app --host 0.0.0.0 --port "${WHISPER_PORT}" &
+uvicorn transcribe_service.api:app --host 0.0.0.0 --port "${WHISPER_PORT}" &
 API_PID=$!
 
 sleep 3

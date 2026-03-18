@@ -1,0 +1,1 @@
+"""Whisper transcription service package."""

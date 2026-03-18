@@ -9,7 +9,7 @@ set -eu
 # - APP_STORAGE_S3_SECRET_ACCESS_KEY
 #
 # Usage:
-#   eval "$(/usr/local/bin/derive-storage-env.sh --export)"
+#   eval "$(/app/scripts/derive-storage-env.sh --export)"
 
 output_mode="plain"
 if [ "${1:-}" = "--export" ]; then

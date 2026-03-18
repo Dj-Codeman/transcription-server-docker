@@ -14,7 +14,7 @@ help:
 	@printf "  make install-amd     Install ROCm PyTorch + openai-whisper\n"
 	@printf "  make install-all     Install both NVIDIA and AMD backends\n"
 	@printf "  make check-amd-env   Validate Python/platform for ROCm wheels\n"
-	@printf "  make check           Compile-check transcribe.py\n"
+	@printf "  make check           Compile-check service modules\n"
 	@printf "  make reset-venv      Recreate venv with $(PYTHON_BIN)\n"
 	@printf "  make clean           Remove generated cache files\n"
 	@printf "\n"
@@ -62,7 +62,7 @@ check-amd-env: setup
 	print("ROCm environment looks compatible")'
 
 check: setup
-	@$(PYTHON) -m py_compile transcribe.py
+	@$(PYTHON) -m py_compile src/transcribe_service/transcribe_core.py src/transcribe_service/api.py
 
 reset-venv:
 	@rm -rf "$(VENV)"

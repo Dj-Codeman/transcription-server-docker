@@ -8,13 +8,13 @@ It supports your storage contract with `APP_STORAGE_MODE=none|mounted|s3` and wr
 
 - Accepts an uploaded audio file (`wav`, `mp3`, `m4a`, etc.)
 - Normalizes audio with `ffmpeg` (mono, 16kHz)
-- Runs transcription through the existing `transcribe.py` backend selection logic
+- Runs transcription through the existing `src/transcribe_service/transcribe_core.py` backend selection logic
 - Returns transcription text as JSON
 
 ## Build
 
 ```bash
-docker build -t whisper-api .
+docker build -f docker/Dockerfile -t whisper-api .
 ```
 
 ## GPU runtime notes
@@ -161,7 +161,7 @@ Optional:
 When `APP_STORAGE_MODE=s3`, the entrypoint runs:
 
 ```sh
-eval "$(/usr/local/bin/derive-storage-env.sh --export)"
+eval "$(/app/scripts/derive-storage-env.sh --export)"
 ```
 
 This allows only the minimal S3 vars to be provided; derived defaults are:

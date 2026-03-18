@@ -12,7 +12,7 @@ import boto3
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from transcribe import run_ffmpeg, transcribe
+from .transcribe_core import run_ffmpeg, transcribe
 
 app = FastAPI(title="Whisper Transcription API", version="1.1.0")
 
@@ -137,8 +137,6 @@ def transcribe_audio(
 
     request_id = uuid.uuid4().hex
     safe_name = _safe_filename(file.filename)
-    suffix = Path(safe_name).suffix or ".audio"
-
     uploads_dir, work_dir, transcripts_dir = _ensure_dirs()
     source_path = uploads_dir / f"{request_id}_{safe_name}"
     optimized_path = work_dir / f"{request_id}.16k_mono.wav"
