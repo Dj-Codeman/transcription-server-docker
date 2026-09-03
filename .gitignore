@@ -1,5 +1,8 @@
 resume-code.sh
 
+# Local secrets — never commit
+.env
+
 # Python environments and caches
 .venv/
 venv/

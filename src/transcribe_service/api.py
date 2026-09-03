@@ -12,9 +12,21 @@ import boto3
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from .transcribe_core import run_ffmpeg, transcribe
+from .transcribe_core import (
+    DEFAULT_CHUNK_OVERLAP_SECONDS,
+    DEFAULT_CHUNK_SECONDS,
+    pool_status,
+    run_ffmpeg,
+    shutdown_pools,
+    transcribe,
+)
 
 app = FastAPI(title="Whisper Transcription API", version="1.1.0")
+
+
+@app.on_event("shutdown")
+def _shutdown_pools() -> None:
+    shutdown_pools()
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO").upper(),
@@ -121,6 +133,7 @@ def health() -> dict:
         "storage_mode": APP_STORAGE_MODE,
         "storage_root": str(APP_STORAGE_ROOT),
         "effective_storage_root": str(EFFECTIVE_STORAGE_ROOT),
+        **pool_status(),
     }
 
 
@@ -131,6 +144,8 @@ def transcribe_audio(
     backend: str = Form(DEFAULT_BACKEND),
     device: str = Form(DEFAULT_DEVICE),
     compute_type: str = Form(DEFAULT_COMPUTE_TYPE),
+    chunk_seconds: int = Form(DEFAULT_CHUNK_SECONDS),
+    chunk_overlap_seconds: int = Form(DEFAULT_CHUNK_OVERLAP_SECONDS),
 ) -> dict:
     if not file.filename:
         raise HTTPException(status_code=400, detail="Uploaded file must include a filename.")
@@ -148,13 +163,16 @@ def transcribe_audio(
     started_at = time.monotonic()
 
     logger.info(
-        "transcribe start request_id=%s filename=%s model=%s backend=%s device=%s compute_type=%s storage_mode=%s",
+        "transcribe start request_id=%s filename=%s model=%s backend=%s device=%s compute_type=%s "
+        "chunk_seconds=%s chunk_overlap_seconds=%s storage_mode=%s",
         request_id,
         file.filename,
         model,
         backend,
         device,
         compute_type,
+        chunk_seconds,
+        chunk_overlap_seconds,
         APP_STORAGE_MODE,
     )
 
@@ -166,7 +184,15 @@ def transcribe_audio(
         run_ffmpeg(source_path, optimized_path)
 
         logger.info("whisper transcribe request_id=%s optimized=%s", request_id, optimized_path)
-        text, info = transcribe(optimized_path, model, backend, device, compute_type)
+        text, info = transcribe(
+            optimized_path,
+            model,
+            backend,
+            device,
+            compute_type,
+            chunk_seconds=chunk_seconds,
+            overlap_seconds=chunk_overlap_seconds,
+        )
         transcript_path.write_text(text, encoding="utf-8")
 
         if APP_STORAGE_MODE == "s3":
@@ -207,6 +233,8 @@ def transcribe_audio(
         "backend": backend,
         "device": device,
         "compute_type": compute_type,
+        "chunk_seconds": chunk_seconds,
+        "chunk_overlap_seconds": chunk_overlap_seconds,
         "storage": {
             "mode": APP_STORAGE_MODE,
             "root": str(APP_STORAGE_ROOT),
