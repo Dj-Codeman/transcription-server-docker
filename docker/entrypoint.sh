@@ -45,6 +45,11 @@ if [ -z "${TS_AUTHKEY:-}" ]; then
   exit 1
 fi
 
+if [ -z "${TS_TAGS:-}" ]; then
+  echo "TS_TAGS is required (tailscale serve --service needs a tagged node, e.g. tag:whisper-api)"
+  exit 1
+fi
+
 echo "[start] starting tailscaled"
 tailscaled \
   --tun=userspace-networking \
@@ -58,6 +63,7 @@ echo "[start] bringing tailscale up"
 tailscale --socket=/tmp/tailscaled.sock up \
   --auth-key="${TS_AUTHKEY}" \
   --hostname="${TS_HOSTNAME}" \
+  --advertise-tags="${TS_TAGS}" \
   --accept-dns=false
 
 echo "[start] starting whisper api"

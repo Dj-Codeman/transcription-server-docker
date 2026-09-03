@@ -1,0 +1,25 @@
+services:
+  transcribe:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: transcribe
+    env_file:
+      - .env
+    ports:
+      - "${DOCKER_PORT:-8000}:8000"
+    # Storage mode "mounted" (APP_STORAGE_MODE=mounted) needs a host path
+    # bound to /workspace. Point this at your transcripts directory, or
+    # remove it entirely for storage mode "none" / "s3".
+    volumes:
+      - ${MOUNT:-./workspace}:/workspace
+    # GPU passthrough for WHISPER_DEVICE=cuda. Remove this block (or set
+    # WHISPER_DEVICE=cpu) if you don't have an NVIDIA GPU + nvidia-container-toolkit.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
