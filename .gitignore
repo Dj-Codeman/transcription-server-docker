@@ -3,6 +3,9 @@ resume-code.sh
 # Local secrets — never commit
 .env
 
+# Runtime data (uploads/work/transcripts) — never commit
+/workspace/
+
 # Python environments and caches
 .venv/
 venv/
